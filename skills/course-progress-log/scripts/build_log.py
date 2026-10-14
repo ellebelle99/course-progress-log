@@ -3,9 +3,16 @@
   python build_log.py build spec.json out.md   spec.json -> new log
   python build_log.py recalc log.md            re-sum totals in an existing log
 
-spec.json: {"title", "url", "platform" (optional, default "LinkedIn Learning"),
-            "chapters": [{"name", "episodes": [{"name", "time", "done"}]}]}
-Times are strings as shown on the platform: "1h 5m 10s", "3m 13s", "39s", "1m".
+Time mode (default): {"title", "url", "platform" (optional, default
+"LinkedIn Learning"), "chapters": [{"name", "episodes": [{"name", "time",
+"done"}]}]}. Times are strings as shown on the platform: "1h 5m 10s",
+"3m 13s", "39s", "1m".
+
+Steps mode ("unit": "steps", for platforms that count steps, not minutes):
+{"title", "url", "platform", "unit": "steps", "notes": [optional lines],
+"chapters": [{"name", "episodes": [{"name", "type", "steps", "passed"}]}]}.
+Done is derived: an item is [x] only when passed == steps. In an existing
+steps log, edit the Passed cell; recalc rewrites ticks and every total.
 """
 import json
 import re
@@ -13,6 +20,8 @@ import sys
 
 LEGEND = ("Done: [x] watched (green tick), [ ] not finished. "
           "Durations as shown on LinkedIn; totals are summed.")
+LEGEND_STEPS = ("Done: [x] every step passed, [ ] not finished. "
+                "Steps as the platform counts them; totals are summed.")
 
 
 def seconds(t):
@@ -30,7 +39,40 @@ def fmt(x):
     return (f"{h}h " if h else "") + (f"{m}m " if h or m else "") + f"{s}s"
 
 
+def check_steps(e):
+    if not 0 <= e["passed"] <= e["steps"]:
+        raise SystemExit(f"passed {e['passed']} is outside 0..{e['steps']}: {e['name']}")
+
+
+def render_steps(spec):
+    out = [f"# {spec['title']}", "",
+           f"{spec.get('platform', 'freeCodeCamp')}: {spec['url']}", "",
+           LEGEND_STEPS, ""]
+    total = done_total = 0
+    body = []
+    for ch in spec["chapters"]:
+        eps = ch["episodes"]
+        for e in eps:
+            check_steps(e)
+        s = sum(e["steps"] for e in eps)
+        d = sum(e["passed"] for e in eps)
+        total += s
+        done_total += d
+        body += [f"## {ch['name']}", f"Total: {s} steps | Done: {d}", "",
+                 "| Done | Item | Type | Passed | Steps |", "|---|---|---|---|---|"]
+        body += [f"| {'[x]' if e['passed'] == e['steps'] else '[ ]'} | {e['name']} "
+                 f"| {e['type']} | {e['passed']} | {e['steps']} |" for e in eps]
+        body.append("")
+    out += [f"**Course total: {total} steps** | **Done: {done_total}** "
+            f"| Remaining: {total - done_total}", ""]
+    for note in spec.get("notes", []):
+        out += [note, ""]
+    return "\n".join(out + body)
+
+
 def render(spec):
+    if spec.get("unit") == "steps":
+        return render_steps(spec)
     out = [f"# {spec['title']}", "",
            f"{spec.get('platform', 'LinkedIn Learning')}: {spec['url']}", "",
            LEGEND, ""]
@@ -59,15 +101,29 @@ def parse(text):
     platform, url = lines[2].split(": ", 1)
     spec = {"title": lines[0][2:], "platform": platform, "url": url,
             "chapters": []}
+    if lines[4].startswith("Done: [x] every step passed"):
+        spec["unit"] = "steps"
+        spec["notes"] = []
     for line in lines[3:]:
         if line.startswith("## "):
             spec["chapters"].append({"name": line[3:], "episodes": []})
         elif line.startswith("| [") and spec["chapters"]:
-            mark, name, time = [c.strip() for c in line.strip("|").split("|")]
-            if mark not in ("[x]", "[ ]"):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if cells[0] not in ("[x]", "[ ]"):
                 raise SystemExit(f"bad Done mark in row: {line}")
-            spec["chapters"][-1]["episodes"].append(
-                {"name": name, "time": time, "done": mark == "[x]"})
+            if spec.get("unit") == "steps":
+                if len(cells) != 5 or not (cells[3].isdigit() and cells[4].isdigit()):
+                    raise SystemExit(f"bad steps row: {line}")
+                spec["chapters"][-1]["episodes"].append(
+                    {"name": cells[1], "type": cells[2],
+                     "passed": int(cells[3]), "steps": int(cells[4])})
+            else:
+                mark, name, time = cells
+                spec["chapters"][-1]["episodes"].append(
+                    {"name": name, "time": time, "done": mark == "[x]"})
+        elif (spec.get("unit") == "steps" and not spec["chapters"]
+              and line.startswith("Not counted")):
+            spec["notes"].append(line)
     return spec
 
 

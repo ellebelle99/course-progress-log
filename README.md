@@ -1,6 +1,6 @@
 # course-progress-log
 
-Turns screenshots of an online course's lesson list into one markdown progress log.
+Turns screenshots (or pasted page text) of an online course's lesson list into one markdown progress log.
 
 You see every chapter, episode, duration, done tick and total at a glance, and can update it with a new screenshot.
 
@@ -40,6 +40,8 @@ Paste screenshots of the course's lesson list and ask for a progress log.
 Claude asks which chapters are missing and where the file goes, then writes `<course-slug>.md`.
 
 Paste new screenshots later to update the ticks and totals.
+
+Platforms that count steps instead of minutes, such as freeCodeCamp, get a steps log: each block with its steps passed and total. A sample is in [examples/example-steps-log.md](examples/example-steps-log.md).
 
 
 ## Contributing

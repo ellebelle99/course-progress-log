@@ -1,6 +1,6 @@
 ---
 name: course-progress-log
-description: "Use when the user pastes screenshots of an online course's lesson list (LinkedIn Learning or similar) and wants a progress log, or sends new screenshots to update one: chapters, episodes, durations, totals, done ticks."
+description: "Use when the user pastes screenshots or page text of an online course's lesson list (LinkedIn Learning, freeCodeCamp or similar) and wants a progress log, or sends new ones to update one: chapters, episodes or steps, durations, totals, done ticks."
 ---
 
 # Course progress log
@@ -19,9 +19,18 @@ One simple markdown file per course: chapters, episodes with durations, a Done t
 
 New screenshots: edit the `[x]`/`[ ]` cells (or add rows) in the existing `.md`, then run `python <skill folder>/scripts/build_log.py recalc <file>.md` with absolute paths. It rewrites every chapter `Total | Done` line and the course totals, so never edit those by hand. Change only rows the screenshot shows differently; chapters not in it stay as they are. The file is the only source of truth; no JSON is kept.
 
+## Steps mode (platforms that count steps, not minutes, such as freeCodeCamp)
+
+Use it when the platform shows "N of M steps complete" and no durations. Never invent times. Add `"unit": "steps"` to the spec; each item has `type` (Theory, Workshop, Lab, Review, Quiz, Certification Project), `steps` and `passed` instead of `time` and `done`. Pasted page text beats screenshots here: it lists every step as Passed or Not Passed.
+
+- **Counting rule:** a theory block counts one step per question listed, a workshop one per numbered step, a lab, review, quiz or certification project one. Confirm this by summing each chapter against the platform's own "M steps" figure before writing; if a chapter does not match, stop and ask.
+- **Items outside the chapter counts** (certification projects between chapters, a final review) go in one last chapter. A non-counted exam goes in spec `notes`, printed as `Not counted in steps: ...`.
+- **Done is derived** from `passed == steps`. To update, edit the Passed cell only, then run `recalc`; it rewrites ticks and totals. Partial progress is fine (`7` of `21`): the `Done` totals count every passed step, ticked or not, while a row is ticked only when all its steps are passed.
+- Same `build` and `recalc` commands, same file placement. Totals line reads `Course total: N steps | Done: D | Remaining: R`.
+
 ## Output shape (fixed)
 
-Title line; `Platform: URL` line (spec `platform` defaults to `LinkedIn Learning`); legend line; one bold totals line; then per chapter a `##` heading, a `Total | Done` line and a `| Done | Episode | Time |` table. Do not add columns, emoji or commentary.
+Steps mode swaps the table for `| Done | Item | Type | Passed | Steps |` and the `Total | Done` lines count steps; everything else below holds. Title line; `Platform: URL` line (spec `platform` defaults to `LinkedIn Learning`); legend line; one bold totals line; then per chapter a `##` heading, a `Total | Done` line and a `| Done | Episode | Time |` table. Do not add columns, emoji or commentary.
 
 ## Spec shape
 
