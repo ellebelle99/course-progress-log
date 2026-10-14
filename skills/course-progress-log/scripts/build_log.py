@@ -19,7 +19,7 @@ import re
 import sys
 
 LEGEND = ("Done: [x] watched (green tick), [ ] not finished. "
-          "Durations as shown on LinkedIn; totals are summed.")
+          "Durations as shown on {platform}; totals are summed.")
 LEGEND_STEPS = ("Done: [x] every step passed, [ ] not finished. "
                 "Steps as the platform counts them; totals are summed.")
 
@@ -75,7 +75,8 @@ def render(spec):
         return render_steps(spec)
     out = [f"# {spec['title']}", "",
            f"{spec.get('platform', 'LinkedIn Learning')}: {spec['url']}", "",
-           LEGEND, ""]
+           LEGEND.format(platform=spec.get("platform", "LinkedIn Learning")
+                         .replace("LinkedIn Learning", "LinkedIn")), ""]
     total = done_total = 0
     body = []
     for ch in spec["chapters"]:

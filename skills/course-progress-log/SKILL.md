@@ -28,6 +28,10 @@ Use it when the platform shows "N of M steps complete" and no durations. Never i
 - **Done is derived** from `passed == steps`. To update, edit the Passed cell only, then run `recalc`; it rewrites ticks and totals. Partial progress is fine (`7` of `21`): the `Done` totals count every passed step, ticked or not, while a row is ticked only when all its steps are passed.
 - Same `build` and `recalc` commands, same file placement. Totals line reads `Course total: N steps | Done: D | Remaining: R`.
 
+## Video series and documentaries (no lesson list)
+
+A multi-part video with no chapters can use the same file. Set `platform` (for example `YouTube`), make each part a chapter and cut each part into viewing segments of about 30 minutes named by their range (`0:30:00 to 1:00:00`), so partial progress shows. Take lengths from the platform, never by guess; tick a segment only when he says he watched that range. A range he gives ("watching 53:22 to the end") is a segment boundary: cut there and leave it unticked until he says it is finished. Plan it with `study-plan` like any course.
+
 ## Output shape (fixed)
 
 Steps mode swaps the table for `| Done | Item | Type | Passed | Steps |` and the `Total | Done` lines count steps; everything else below holds. Title line; `Platform: URL` line (spec `platform` defaults to `LinkedIn Learning`); legend line; one bold totals line; then per chapter a `##` heading, a `Total | Done` line and a `| Done | Episode | Time |` table. Do not add columns, emoji or commentary.
